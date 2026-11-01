@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap">
 <style>
-/* Layout: one-screen player column. Header, tempo, pitch, loop row, full-bleed scrolling waveform, seek bar, transport. */
+/* Layout: one-screen player column. Header, tempo, pitch, tanpura row, full-bleed scrolling waveform, transport. */
 :root {
   --bg: #4a45c4;
   --glass: rgba(24, 14, 72, 0.34);
@@ -78,13 +78,16 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 24px;
 input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 50%; background: var(--accent); border: 0; }
 
 /* loop row */
-.loop { background: var(--glass); display: flex; align-items: center; gap: 12px; padding-top: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--line); flex: none; min-height: 64px; }
-.loop .name { font-size: 20px; font-weight: 500; width: 76px; flex: none; }
-.ab { min-width: 36px; height: 36px; padding: 0 9px; border-radius: 6px; background: var(--chip); color: var(--chip-ink); font-weight: 700; font-size: 20px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
-.ab small { font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; }
-.ab.set { background: var(--accent); color: var(--accent-ink); }
-.loop .spacer { flex: 1; }
-
+.loop { background: var(--glass); display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding-top: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--line); flex: none; min-height: 64px; }
+.loop .name { font-size: 20px; font-weight: 500; flex: none; }
+.loop .val { flex: 1; }
+.loop .val output { min-width: 3.6ch; }
+.loop .sw { margin-left: auto; }
+.speed { flex: 1 0 100%; display: flex; align-items: center; gap: 12px; }
+.speed .lbl { font-size: 16px; color: var(--muted); width: 4.2em; flex: none; }
+.speed input[type=range] { flex: 1; min-width: 0; }
+.speed .rd { min-width: 4.6ch; height: 36px; border-radius: 18px; color: var(--accent); font-weight: 500; font-size: 16px; font-variant-numeric: tabular-nums; text-align: center; }
+.speed .rd:active { background: rgba(255,255,255,.18); }
 /* waveform */
 .wave { flex: 1; min-height: 150px; position: relative; touch-action: pan-y; cursor: grab; border-bottom: 1px solid var(--line); background: var(--glass); }
 .wave canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
@@ -93,11 +96,6 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
 .pill { pointer-events: auto; background: var(--accent); color: var(--accent-ink); font-weight: 500; height: 40px; padding: 0 18px; border-radius: 20px; display: inline-flex; align-items: center; gap: 8px; }
 .pill svg { width: 20px; height: 20px; }
 .pill.quiet { background: rgba(255,255,255,.2); color: var(--text); }
-
-/* seek */
-.seek { display: flex; align-items: center; gap: 10px; padding-top: 14px; flex: none; font-variant-numeric: tabular-nums; font-size: 16px; }
-.seek span { width: 4.2ch; flex: none; }
-.seek span:last-child { text-align: right; }
 
 /* transport */
 .transport { display: flex; align-items: center; justify-content: space-around; padding-top: 6px; padding-bottom: 8px; flex: none; }
@@ -182,23 +180,29 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
     <input type="range" id="pitch" min="-12" max="12" step="0.01" value="0" aria-label="Pitch in semitones">
   </section>
 
-  <section class="loop bar" aria-label="Loop">
-    <span class="name">Loop</span>
-    <button class="ab" id="loopA" aria-label="Set loop start here">A</button>
-    <button class="ab" id="loopB" aria-label="Set loop end here">B</button>
-    <span class="spacer"></span>
-    <button class="icon" id="loopClear" aria-label="Clear loop points"><svg viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
+  <section class="loop bar" aria-label="Tanpura">
+    <span class="name">Tanpura</span>
+    <div class="val">
+      <button class="nudge" id="saDn" aria-label="Tanpura key down one semitone">−</button>
+      <output id="saVal" aria-live="polite">E</output>
+      <button class="nudge" id="saUp" aria-label="Tanpura key up one semitone">+</button>
+    </div>
+    <button class="sw" role="switch" id="swTanpura" aria-checked="false" aria-label="Tanpura on or off"></button>
+    <div class="speed">
+      <span class="lbl">Speed</span>
+      <input type="range" id="tanSpeed" min="50" max="200" step="1" value="100" aria-label="Tanpura speed percent">
+      <button class="rd" id="tanSpeedVal" aria-label="Tanpura speed. Tap to reset to 100 percent.">100%</button>
+    </div>
+    <div class="speed">
+      <span class="lbl">Volume</span>
+      <input type="range" id="tanVol" min="0" max="100" step="1" value="60" aria-label="Tanpura volume">
+      <button class="rd" id="tanVolVal" aria-label="Tanpura volume. Tap to reset.">60%</button>
+    </div>
   </section>
 
-  <section class="wave" id="wave" aria-label="Waveform. Drag to move through the audio.">
+  <section class="wave" id="wave" aria-label="Waveform of the tabla loop">
     <canvas id="cv"></canvas>
     <div class="msg" id="waveMsg"></div>
-  </section>
-
-  <section class="seek bar">
-    <span id="tCur">0:00</span>
-    <input type="range" id="seek" min="0" max="1000" step="1" value="0" aria-label="Position">
-    <span id="tDur">0:00</span>
   </section>
 
   <section class="transport bar">
@@ -231,11 +235,11 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
   <div class="scrim" data-close></div>
   <div class="panel" role="dialog" aria-label="Settings">
     <h2>Saved settings</h2>
-    <div class="setting"><div class="t"><b>Remember my settings</b><small>Tempo, pitch, loop points and your last sound come back when you reopen the app.</small></div><button class="sw" role="switch" id="swPersist" aria-checked="true" aria-label="Remember my settings"></button></div>
-    <div class="setting"><div class="t"><b>Separate settings per track</b><small>Each sound keeps its own tempo, pitch and loop points.</small></div><button class="sw" role="switch" id="swPer" aria-checked="true" aria-label="Separate settings per track"></button></div>
+    <div class="setting"><div class="t"><b>Remember my settings</b><small>Tempo, pitch, tanpura and your last sound come back when you reopen the app.</small></div><button class="sw" role="switch" id="swPersist" aria-checked="true" aria-label="Remember my settings"></button></div>
+    <div class="setting"><div class="t"><b>Separate settings per track</b><small>Each sound keeps its own tempo, pitch and tanpura key.</small></div><button class="sw" role="switch" id="swPer" aria-checked="true" aria-label="Separate settings per track"></button></div>
     <div class="setting"><div class="t"><b>Resume where I stopped</b><small>Open the last sound at the position you left it.</small></div><button class="sw" role="switch" id="swResume" aria-checked="true" aria-label="Resume where I stopped"></button></div>
     <p class="empty" id="storeNote" style="margin-top:14px"></p>
-    <div class="btn-row"><button class="pill quiet" id="resetAll">Reset tempo, pitch and loop</button><button class="pill" data-close>Done</button></div>
+    <div class="btn-row"><button class="pill quiet" id="resetAll">Reset tempo, pitch and tanpura</button><button class="pill" data-close>Done</button></div>
   </div>
 </div>
 
@@ -369,7 +373,7 @@ function decode(ab) {
 
 /* ---------------- state and storage ---------------- */
 const LS = 'expressionArts.v1';
-const S = { tempo: 100, pitch: 0, repeat: true, loopA: null, loopB: null,
+const S = { tempo: 100, pitch: 0, repeat: true, tanpura: false, tanSpeed: 100, tanVol: 60, sa: null,
   persist: true, perTrack: true, resume: true, trackId: null, pos: 0 };
 let perTrack = {};
 function lsRead() { try { return JSON.parse(localStorage.getItem(LS) || 'null'); } catch (e) { return null; } }
@@ -379,7 +383,7 @@ function loadStored() {
   if (d.flags) { S.persist = d.flags.persist !== false; S.perTrack = d.flags.perTrack !== false; S.resume = d.flags.resume !== false; }
   if (S.persist && d.global) {
     S.tempo = clamp(+d.global.tempo || 100, 50, 150); S.pitch = clamp(+d.global.pitch || 0, -12, 12);
-        S.trackId = d.global.trackId || null;
+        S.trackId = d.global.trackId || null; S.tanpura = !!d.global.tanpura; S.tanSpeed = clamp(+d.global.tanSpeed || 100, 50, 200); if (d.global.tanVol != null) S.tanVol = clamp(+d.global.tanVol, 0, 100);
     perTrack = d.tracks || {};
   }
 }
@@ -388,8 +392,8 @@ function saveSoon() { clearTimeout(saveT); saveT = setTimeout(saveNow, 350); }
 function saveNow() {
   const flags = { persist: S.persist, perTrack: S.perTrack, resume: S.resume };
   if (!S.persist) { lsWrite({ flags }); return; }
-  if (S.trackId) perTrack[S.trackId] = { tempo: S.tempo, pitch: S.pitch, loopA: S.loopA, loopB: S.loopB, pos: curSec() };
-  lsWrite({ flags, global: { tempo: S.tempo, pitch: S.pitch, trackId: S.trackId }, tracks: perTrack });
+  if (S.trackId) perTrack[S.trackId] = { tempo: S.tempo, pitch: S.pitch, sa: S.sa, pos: curSec() };
+  lsWrite({ flags, global: { tempo: S.tempo, pitch: S.pitch, trackId: S.trackId, tanpura: S.tanpura, tanSpeed: S.tanSpeed, tanVol: S.tanVol }, tracks: perTrack });
 }
 addEventListener('pagehide', saveNow);
 document.addEventListener('visibilitychange', () => { if (document.hidden) saveNow(); });
@@ -397,9 +401,11 @@ setInterval(() => { if (E.want) saveNow(); }, 5000);
 
 /* Built-in sounds: each file is a loop cut so its end joins its start without a gap */
 const lib = [
-  { id: 'tabla-1', name: 'Tabla 1', url: 'tabla-1.wav', dur: 22.328 },
-  { id: 'tabla-2', name: 'Tabla 2', url: 'tabla-2.wav', dur: 9.505 },
-  { id: 'kehrwa-tamborine', name: 'Kehrwa + Tamborine', url: 'kehrwa-tamborine.wav', dur: 33.0 }
+  { id: 'tabla-1', sa: 4, name: 'Tabla 1', url: 'tabla-1.wav', dur: 22.328 },
+  { id: 'tabla-2', sa: 9, name: 'Tabla 2', url: 'tabla-2.wav', dur: 9.505 },
+  { id: 'tabla-3', sa: 6, name: 'Tabla 3', url: 'tabla-3.wav', dur: 30.857 },
+  { id: 'tabla-4', sa: 4, name: 'Tabla 4', url: 'tabla-4.wav', dur: 16.271 },
+  { id: 'kehrwa-tamborine', sa: 1, name: 'Kehrwa + Tamborine', url: 'kehrwa-tamborine.wav', dur: 33.0 }
 ];
 const decoded = new Map();
 
@@ -433,12 +439,7 @@ function computePeaks(chs, len, sr) {
 function pushEngine() {
   E.tempo = S.tempo / 100; E.semi = S.pitch;
   if (!E.len) { E.A = E.B = 0; return; }
-  const sr = E.sr, a = S.loopA != null ? S.loopA * sr : null, b = S.loopB != null ? S.loopB * sr : null;
-  let A = 0, B = 0;
-  if (a != null && b != null && b > a) { A = a; B = b; }
-  else if (S.repeat) { A = a != null ? a : 0; B = E.len; }
-  E.A = Math.floor(A); E.B = Math.floor(B);
-  if (E.B > 0 && E.B - E.A < N) { E.A = 0; E.B = E.len; }
+  E.A = 0; E.B = E.len;
 }
 
 async function setTrackBuffer(buf, item, startSec) {
@@ -449,9 +450,9 @@ async function setTrackBuffer(buf, item, startSec) {
   cur = { id: item.id, name: item.name, dur: buf.duration };
   S.trackId = item.id;
   const st = S.persist && S.perTrack ? perTrack[item.id] : null;
-  if (S.perTrack && st) { S.tempo = clamp(st.tempo, 50, 150); S.pitch = clamp(st.pitch, -12, 12); S.loopA = st.loopA; S.loopB = st.loopB; }
-  else { S.loopA = S.loopB = null; }
-  if (S.loopB != null && S.loopB > cur.dur) S.loopA = S.loopB = null;
+  if (S.perTrack && st) { S.tempo = clamp(st.tempo, 50, 150); S.pitch = clamp(st.pitch, -12, 12); }
+  S.sa = (S.perTrack && st && st.sa != null) ? st.sa : (item.sa != null ? item.sa : 0);
+  tanpuraRetune();
   pushEngine(); engSeek(clamp(startSec || 0, 0, Math.max(0, cur.dur - 0.1)) * E.sr);
   item.dur = buf.duration;
   dirty = true; render(); saveSoon();
@@ -490,7 +491,7 @@ async function go(dir, keepPlaying) {
 }
 
 /* ---------------- UI ---------------- */
-const el = { tempo: $('#tempo'), pitch: $('#pitch'), seek: $('#seek'), cv: $('#cv'), wave: $('#wave') };
+const el = { tempo: $('#tempo'), pitch: $('#pitch'), cv: $('#cv'), wave: $('#wave') };
 let toastT = 0;
 function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 3200); }
 let msgText = null;
@@ -505,16 +506,11 @@ function render() {
   setRange(el.pitch, S.pitch); $('#pitchVal').textContent = (S.pitch >= 0 ? '+' : '−') + Math.abs(S.pitch).toFixed(2);
   $('#title').textContent = cur ? cur.name : 'Expression Arts';
   document.title = cur && cur.id !== 'demo' ? cur.name + ' · Expression Arts' : 'Expression Arts';
-  $('#tDur').textContent = fmt(cur ? cur.dur : 0);
-  const a = $('#loopA'), b = $('#loopB');
-  a.className = 'ab' + (S.loopA != null ? ' set' : ''); b.className = 'ab' + (S.loopB != null ? ' set' : '');
-  a.innerHTML = S.loopA != null ? 'A <small>' + fmt(S.loopA) + '</small>' : 'A';
-  b.innerHTML = S.loopB != null ? 'B <small>' + fmt(S.loopB) + '</small>' : 'B';
+  renderTanpura();
   $('#playIcon').innerHTML = E.want ? '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>' : '<path d="M8 5v14l11-7z"/>';
   $('#btnPlay').setAttribute('aria-label', E.want ? 'Pause' : 'Play');
   let nx;
-  if (S.loopA != null && S.loopB != null) nx = 'Practice loop ' + fmt(S.loopA) + ' to ' + fmt(S.loopB);
-  else nx = 'Looping continuously · next: ' + neighbor(1).name;
+  nx = 'Looping continuously · next: ' + neighbor(1).name;
   $('#nextText').textContent = nx;
   renderMsg(); dirty = true;
 }
@@ -536,6 +532,110 @@ function renderLib() {
   }
 }
 
+
+/* ---------------- Tanpura ----------------
+   Four strings plucked in a steady cycle: Pa (lower), Sa, Sa, Sa (lower octave).
+   Strings are oscillators built from a harmonic-rich wave, brightened by a sweeping
+   low-pass filter to imitate the buzzing jawari bridge. Their pitch follows the
+   Pitch slider, so the drone stays in tune with the tabla. */
+const NOTES = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
+const STRINGS = [0.75, 1, 1, 0.5];
+const GAP0 = 1.6;
+const volGain = () => Math.pow(S.tanVol / 60, 2);
+const gap = () => GAP0 / (S.tanSpeed / 100);
+const T = { on: false, bus: null, wave: null, strings: [], idx: 0, next: 0, timer: 0 };
+function saBase() { let f = 130.81 * Math.pow(2, (S.sa || 0) / 12); if (f >= 200) f /= 2; return f; }
+function saNow() { return saBase() * Math.pow(2, S.pitch / 12); }
+function tanpuraBus() {
+  if (T.bus) return;
+  ensureCtx();
+  T.bus = ac.createGain(); T.bus.gain.value = 0;
+  const comp = ac.createDynamicsCompressor(); comp.threshold.value = -18; comp.ratio.value = 3;
+  T.bus.connect(comp); comp.connect(ac.destination);
+  const n = 40, re = new Float32Array(n + 1), im = new Float32Array(n + 1);
+  for (let k = 1; k <= n; k++) im[k] = (1 / Math.pow(k, 0.85)) * (1 + 1.6 * Math.exp(-Math.pow((k - 6) / 4, 2)));
+  T.wave = ac.createPeriodicWave(re, im);
+}
+function pluck(ratio, when, idx) {
+  const f = saNow() * ratio, o1 = ac.createOscillator(), o2 = ac.createOscillator();
+  o1.setPeriodicWave(T.wave); o2.setPeriodicWave(T.wave);
+  o1.frequency.value = f; o2.frequency.value = f; o2.detune.value = 3;
+  const g = ac.createGain(), lp = ac.createBiquadFilter();
+  lp.type = 'lowpass'; lp.Q.value = 1.4;
+  const peak = 0.17 / Math.sqrt(1 / ratio);
+  g.gain.setValueAtTime(0.0001, when);
+  g.gain.linearRampToValueAtTime(peak, when + 0.012);
+  g.gain.setTargetAtTime(0, when + 0.05, 1.9);
+  lp.frequency.setValueAtTime(900, when);
+  lp.frequency.linearRampToValueAtTime(5200, when + 0.9);
+  lp.frequency.setTargetAtTime(1400, when + 0.9, 1.6);
+  o1.connect(g); o2.connect(g); g.connect(lp); lp.connect(T.bus);
+  o1.start(when); o2.start(when); o1.stop(when + 9); o2.stop(when + 9);
+  const st = { o1, o2, ratio, when, idx, end: when + 9 };
+  T.strings.push(st);
+  o1.onended = () => { T.strings = T.strings.filter((x) => x !== st); try { lp.disconnect(); g.disconnect(); } catch (e) {} };
+}
+function tanpuraTick() {
+  if (!T.on || !ac) return;
+  const now = ac.currentTime;
+  if (T.next < now) T.next = now + 0.05;
+  while (T.next < now + 1.5) { pluck(STRINGS[T.idx % 4], T.next, T.idx); T.idx++; T.next += gap(); }
+}
+function tanpuraRetune() {
+  if (!T.strings.length || !ac) return;
+  const f = saNow(), t = ac.currentTime;
+  for (const s of T.strings) { s.o1.frequency.setTargetAtTime(f * s.ratio, t, 0.04); s.o2.frequency.setTargetAtTime(f * s.ratio, t, 0.04); }
+}
+async function tanpuraSet(on) {
+  S.tanpura = on;
+  if (on) {
+    tanpuraBus(); try { await ac.resume(); } catch (e) {}
+    T.on = true; T.idx = 0; T.next = ac.currentTime + 0.05;
+    T.bus.gain.cancelScheduledValues(ac.currentTime); T.bus.gain.setTargetAtTime(volGain(), ac.currentTime, 0.05);
+    tanpuraTick(); clearInterval(T.timer); T.timer = setInterval(tanpuraTick, 250);
+  } else if (T.bus) {
+    T.on = false; clearInterval(T.timer);
+    const t = ac.currentTime; T.bus.gain.cancelScheduledValues(t); T.bus.gain.setTargetAtTime(0, t, 0.25);
+    setTimeout(() => { if (!T.on) { for (const s of T.strings) { try { s.o1.stop(); s.o2.stop(); } catch (e) {} } T.strings = []; } }, 1800);
+  }
+  renderTanpura(); saveSoon();
+}
+function tanpuraSpeed(v) {
+  S.tanSpeed = clamp(Math.round(v), 50, 200);
+  if (T.on && ac) {
+    // drop plucks that have not sounded yet and re-space them at the new speed
+    const now = ac.currentTime, fut = T.strings.filter((x) => x.when > now + 0.05).sort((a, b) => a.idx - b.idx);
+    if (fut.length) {
+      for (const x of fut) { try { x.o1.stop(); x.o2.stop(); } catch (e) {} }
+      T.strings = T.strings.filter((x) => !fut.includes(x));
+      T.idx = fut[0].idx;
+      const kept = T.strings.filter((x) => x.when <= now + 0.05).map((x) => x.when);
+      T.next = Math.max(now + 0.05, kept.length ? Math.max(...kept) + gap() : now + 0.05);
+      tanpuraTick();
+    }
+  }
+  renderTanpura(); saveSoon();
+}
+function tanpuraVol(v) {
+  S.tanVol = clamp(Math.round(v), 0, 100);
+  if (T.on && T.bus) T.bus.gain.setTargetAtTime(volGain(), ac.currentTime, 0.03);
+  renderTanpura(); saveSoon();
+}
+function renderTanpura() {
+  setRange($('#tanVol'), S.tanVol); $('#tanVolVal').textContent = S.tanVol + '%';
+  setRange($('#tanSpeed'), S.tanSpeed); $('#tanSpeedVal').textContent = S.tanSpeed + '%';
+  const n = Math.round(((S.sa || 0) + S.pitch) % 12 + 12) % 12;
+  $('#saVal').textContent = NOTES[n];
+  $('#swTanpura').setAttribute('aria-checked', !!S.tanpura);
+}
+function saStep(d) { S.sa = (((S.sa || 0) + d) % 12 + 12) % 12; tanpuraRetune(); renderTanpura(); saveSoon(); }
+$('#saDn').onclick = () => saStep(-1); $('#saUp').onclick = () => saStep(1);
+$('#swTanpura').onclick = () => tanpuraSet(!S.tanpura);
+$('#tanSpeed').addEventListener('input', (e) => tanpuraSpeed(+e.target.value));
+$('#tanSpeedVal').onclick = () => tanpuraSpeed(100);
+$('#tanVol').addEventListener('input', (e) => tanpuraVol(+e.target.value));
+$('#tanVolVal').onclick = () => tanpuraVol(60);
+
 /* controls */
 async function togglePlay(force) {
   if (!E.len) return;
@@ -545,7 +645,7 @@ async function togglePlay(force) {
   E.want = want; render(); if (!want) saveSoon();
 }
 function setTempo(v) { S.tempo = clamp(Math.round(v), 50, 150); E.tempo = S.tempo / 100; pushEngine(); render(); saveSoon(); }
-function setPitch(v) { v = clamp(v, -12, 12); if (Math.abs(v - Math.round(v)) < 0.05) v = Math.round(v); S.pitch = Math.round(v * 100) / 100; pushEngine(); render(); saveSoon(); }
+function setPitch(v) { setTimeout(tanpuraRetune, 0); v = clamp(v, -12, 12); if (Math.abs(v - Math.round(v)) < 0.05) v = Math.round(v); S.pitch = Math.round(v * 100) / 100; pushEngine(); render(); saveSoon(); }
 el.tempo.addEventListener('input', () => setTempo(+el.tempo.value));
 el.pitch.addEventListener('input', () => setPitch(+el.pitch.value));
 $('#tempoDn').onclick = () => setTempo(S.tempo - 1); $('#tempoUp').onclick = () => setTempo(S.tempo + 1);
@@ -553,20 +653,11 @@ $('#pitchDn').onclick = () => setPitch(Math.round(S.pitch) - (Math.abs(S.pitch -
 $('#pitchUp').onclick = () => setPitch(Math.round(S.pitch) + (Math.abs(S.pitch - Math.round(S.pitch)) < 0.05 ? 1 : 0));
 $('#tempoReset').onclick = () => setTempo(100); $('#pitchReset').onclick = () => setPitch(0);
 
-$('#loopA').onclick = () => { if (!E.len) return; const t = curSec(); if (S.loopB != null && t >= S.loopB - 0.25) { toast('Loop start must come before the end.'); return; } S.loopA = Math.round(t * 10) / 10; pushEngine(); render(); saveSoon(); };
-$('#loopB').onclick = () => { if (!E.len) return; const t = Math.round(curSec() * 10) / 10; const a = S.loopA != null ? S.loopA : 0; if (t < a + 0.25) { toast('Loop end must come after the start.'); return; } if (S.loopA == null) S.loopA = 0; S.loopB = t; pushEngine(); render(); saveSoon(); };
-$('#loopClear').onclick = () => { S.loopA = S.loopB = null; pushEngine(); render(); saveSoon(); };
-
 $('#btnPlay').onclick = () => togglePlay();
 const skip = (sec) => { if (E.len) { engSeek(E.cur + sec * E.sr); dirty = true; saveSoon(); } };
 $('#btnBack').onclick = () => skip(-5); $('#btnFwd').onclick = () => skip(5);
 $('#btnPrev').onclick = () => go(-1);
 $('#btnNext').onclick = () => go(1);
-
-let scrubbing = false;
-el.seek.addEventListener('pointerdown', () => { scrubbing = true; });
-addEventListener('pointerup', () => { scrubbing = false; });
-el.seek.addEventListener('input', () => { if (E.len) { engSeek(el.seek.value / 1000 * E.len); setRange(el.seek, el.seek.value); dirty = true; saveSoon(); } });
 
 /* waveform drag to scrub */
 let drag = null;
@@ -596,7 +687,7 @@ function syncSwitches() {
 }
 const flip = (id, key) => { $(id).onclick = () => { S[key] = !S[key]; syncSwitches(); saveNow(); }; };
 flip('#swPersist', 'persist'); flip('#swPer', 'perTrack'); flip('#swResume', 'resume');
-$('#resetAll').onclick = () => { S.tempo = 100; S.pitch = 0; S.loopA = S.loopB = null; pushEngine(); render(); saveNow(); toast('Tempo, pitch and loop points reset.'); closeSheets(); };
+$('#resetAll').onclick = () => { S.tempo = 100; S.pitch = 0; tanpuraSpeed(100); tanpuraVol(60); pushEngine(); tanpuraRetune(); render(); saveNow(); toast('Tempo, pitch and tanpura reset.'); closeSheets(); };
 
 /* waveform drawing */
 const cx2 = el.cv.getContext('2d');
@@ -609,14 +700,6 @@ function draw(posS) {
   if (!css) readCss();
   const pos = posS / E.sr, cx = W / 2, mid = Hh / 2, maxH = Hh * 0.5;
   const i0 = Math.floor((pos - cx / PPS) * BPS) - 1, i1 = Math.ceil((pos + (W - cx) / PPS) * BPS) + 1;
-  // loop region
-  if (E.len && S.loopA != null) {
-    const xa = cx + (S.loopA - pos) * PPS, hasB = S.loopB != null, xb = hasB ? cx + (S.loopB - pos) * PPS : W + 10;
-    if (hasB) { cx2.fillStyle = 'rgba(255,192,77,0.18)'; cx2.fillRect(Math.max(0, xa), 0, Math.min(W, xb) - Math.max(0, xa), Hh); }
-    cx2.fillStyle = css.acc; cx2.font = '700 13px Roboto, sans-serif'; cx2.textBaseline = 'top';
-    if (xa > -2 && xa < W + 2) { cx2.fillRect(xa - 1, 0, 2, Hh); cx2.fillText('A', xa + 5, 6); }
-    if (hasB && xb > -2 && xb < W + 2) { cx2.fillRect(xb - 1, 0, 2, Hh); cx2.fillText('B', xb - 15, 6); }
-  }
   const path = new Path2D();
   for (let i = i0; i <= i1; i++) {
     const x = cx + ((i + 0.5) / BPS - pos) * PPS;
@@ -630,9 +713,6 @@ function draw(posS) {
 function frame() {
   if (E.ended) { E.ended = false; onEnded(); }
   const p = dispSample();
-  const t = fmt(p / (E.sr || 1));
-  if (t !== lastT) { lastT = t; $('#tCur').textContent = t; }
-  if (!scrubbing && E.len) setRange(el.seek, Math.round(p / E.len * 1000));
   if (E.want || dirty || drag) { draw(p); dirty = false; }
   requestAnimationFrame(frame);
 }
@@ -645,6 +725,7 @@ async function onEnded() {
 /* ---------------- boot ---------------- */
 (async function boot() {
   loadStored(); render();
+  if (S.tanpura) { toast('Tap anywhere to start the tanpura.'); addEventListener('pointerdown', function once(e) { removeEventListener('pointerdown', once); if (S.tanpura && !T.on) tanpuraSet(true); }); }
   requestAnimationFrame(frame);
   renderLib();
   ensureCtx();
